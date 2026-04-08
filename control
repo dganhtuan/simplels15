@@ -1,0 +1,9 @@
+Package: com.tuan.simplels15
+Name: simplels15
+Version: 0.0.1
+Architecture: iphoneos-arm
+Description: An awesome Orion tweak!
+Maintainer: tuan
+Author: tuan
+Section: Tweaks
+Depends: ${ORION}, firmware (>= 12.2)

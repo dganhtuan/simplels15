@@ -1,0 +1,30 @@
+name: Build Swift Tweak
+
+on:
+  push:
+    branches: [ main, master ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: macos-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v3
+
+      - name: Setup Theos & Orion
+        uses: theos/theos-action@v1
+        with:
+          theos-src: https://github.com/theos/theos
+          orion: true 
+
+      - name: Build Tweak
+        run: |
+          make clean
+          make package THEOS_PACKAGE_SCHEME=rootless
+
+      - name: Upload DEB
+        uses: actions/upload-artifact@v3
+        with:
+          name: SimpleLS15-DEB
+          path: packages/*.deb
