@@ -11,6 +11,12 @@ simplels15prefs_FILES = TuanRootListController.m
 simplels15prefs_FRAMEWORKS = UIKit
 simplels15prefs_PRIVATE_FRAMEWORKS = Preferences
 simplels15prefs_INSTALL_PATH = /Library/PreferenceBundles
+simplels15prefs_FILES = TuanRootListController.m
+simplels15prefs_INSTALL_PATH = /Library/PreferenceBundles
+# THÊM DÒNG DƯỚI ĐÂY ĐỂ ÉP NÓ COPY BIỂN HIỆU
+internal-stage::
+	$(ECHO_NOTHING)mkdir -p $(THEOS_STAGING_DIR)/Library/PreferenceLoader/Preferences$(ECHO_END)
+	$(ECHO_NOTHING)cp entry.plist $(THEOS_STAGING_DIR)/Library/PreferenceLoader/Preferences/simplels15prefs.plist$(ECHO_END)
 simplels15prefs_CFLAGS = -fobjc-arc
 
 include $(THEOS_MAKE_PATH)/bundle.mk
