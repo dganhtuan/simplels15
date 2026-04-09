@@ -28,29 +28,33 @@ struct Prefs {
     }
 }
 
-// Hook vào View chính để xử lý Ẩn và Trục Y
+// 1. AN TOÀN TRỤC Y (Dùng setFrame để tránh lặp vô hạn AutoLayout)
 class DateViewHook: ClassHook<UIView> {
     static let targetName = "SBFLockScreenDateView"
 
-    func layoutSubviews() {
-        orig.layoutSubviews()
-        guard Prefs.enabled else { return }
-        
-        // Di chuyển trục Y cho cả cụm
-        target.transform = CGAffineTransform(translationX: 0, y: Prefs.yOffset)
+    func setFrame(_ frame: CGRect) {
+        var newFrame = frame
+        if Prefs.enabled {
+            newFrame.origin.y += Prefs.yOffset
+        }
+        orig.setFrame(newFrame)
     }
 }
 
-// Hook vào các nhãn văn bản để xử lý Font, Size và Ẩn thành phần
+// 2. CHỐNG ĐẠN FONT CHỮ VÀ VĂN BẢN
 class LabelHook: ClassHook<UIView> {
     static let targetName = "SBUILegibilityLabel"
 
-    func setFont(_ font: UIFont) {
-        guard Prefs.enabled else { orig.setFont(font); return }
+    // Thêm dấu '?' để không bị nổ khi Apple gửi font Rỗng (nil)
+    func setFont(_ font: UIFont?) {
+        guard Prefs.enabled, let realFont = font else {
+            orig.setFont(font)
+            return
+        }
         
-        var finalSize = font.pointSize
-        let isClock = font.pointSize > 50.0 // Đồng hồ thường rất to
-        let isDate = font.pointSize > 15.0 && font.pointSize <= 50.0 // Ngày tháng
+        var finalSize = realFont.pointSize
+        let isClock = realFont.pointSize > 50.0
+        let isDate = realFont.pointSize > 15.0 && realFont.pointSize <= 50.0
 
         if isClock { finalSize = Prefs.sizeClock }
         else if isDate { finalSize = Prefs.sizeDate }
@@ -65,24 +69,53 @@ class LabelHook: ClassHook<UIView> {
             if newFont == nil { newFont = UIFont(name: "\(Prefs.fontName)-Regular", size: finalSize) }
         }
         
-        orig.setFont(newFont ?? font)
+        orig.setFont(newFont ?? realFont)
     }
 
-    func setText(_ text: String?) {
-        guard Prefs.enabled, let text = text else { orig.setText(text); return }
+    // Đổi thành setString và có dấu '?'
+    func setString(_ string: String?) {
+        guard Prefs.enabled, let text = string else {
+            orig.setString(string)
+            return
+        }
         
-        // Xử lý ẩn Lịch âm (thường chứa các từ như "Giáp", "Ất", "Bính" hoặc định dạng ngày âm)
-        if Prefs.hideLunar && (text.contains("tháng") && text.count > 15) {
+        // Nhận diện ngày tháng âm lịch (Thường có chữ 'tháng' và khá dài)
+        if Prefs.hideLunar && text.lowercased().contains("tháng") && text.count > 10 {
             target.isHidden = true
             target.alpha = 0
             return
         }
         
-        orig.setText(text)
+        orig.setString(string)
+    }
+    
+    // Thêm lại hiệu ứng Glass với bảo mật '?'
+    func setTextColor(_ color: UIColor?) {
+        guard Prefs.enabled else {
+            orig.setTextColor(color)
+            return
+        }
+        
+        if Prefs.fontStyle == "Glass",
+           let font = target.value(forKey: "font") as? UIFont,
+           font.pointSize > 40.0 {
+            
+            let glassColor = UIColor(white: 1.0, alpha: 0.75)
+            target.layer.shadowColor = UIColor.black.cgColor
+            target.layer.shadowOffset = CGSize(width: 0, height: 2)
+            target.layer.shadowRadius = 4.0
+            target.layer.shadowOpacity = 0.5
+            target.layer.masksToBounds = false
+            
+            orig.setTextColor(glassColor)
+            return
+        }
+        
+        orig.setTextColor(color)
     }
 }
 
-// Hook riêng cho Thời tiết (thường nằm trong Subtitle View)
+// 3. ẨN THỜI TIẾT
 class SubtitleHook: ClassHook<UIView> {
     static let targetName = "SBFLockScreenDateSubtitleView"
     
@@ -95,10 +128,10 @@ class SubtitleHook: ClassHook<UIView> {
     }
 }
 
+// 4. KHỞI TẠO TWEAK
 struct SimpleLS15: Tweak {
     init() {
         Prefs.load()
-        // Đăng ký font Lobster
         let fontPath = "/var/jb/Library/PreferenceBundles/simplels15prefs.bundle/lobster.ttf"
         let url = URL(fileURLWithPath: fontPath)
         if let dataProvider = CGDataProvider(url: url as CFURL), let font = CGFont(dataProvider) {
