@@ -4,10 +4,13 @@ import CoreText
 
 struct Prefs {
     static var enabled = true
-    static var alignment = 1
     static var yOffset: CGFloat = 0.0
+    static var sizeClock: CGFloat = 80.0
+    static var sizeDate: CGFloat = 20.0
     static var fontName = "System"
     static var fontStyle = "Normal"
+    static var hideWeather = false
+    static var hideLunar = false
 
     static func load() {
         CFPreferencesAppSynchronize("com.tuan.simplels15" as CFString)
@@ -15,113 +18,95 @@ struct Prefs {
         guard let dict = NSDictionary(contentsOfFile: path) as? [String: Any] else { return }
 
         enabled = dict["enabled"] as? Bool ?? true
-        alignment = dict["alignment"] as? Int ?? 1
         yOffset = dict["yOffset"] as? CGFloat ?? 0.0
+        sizeClock = dict["sizeClock"] as? CGFloat ?? 80.0
+        sizeDate = dict["sizeDate"] as? CGFloat ?? 20.0
         fontName = dict["fontName"] as? String ?? "System"
         fontStyle = dict["fontStyle"] as? String ?? "Normal"
+        hideWeather = dict["hideWeather"] as? Bool ?? false
+        hideLunar = dict["hideLunar"] as? Bool ?? false
     }
 }
 
-func registerCustomFont(fileName: String) {
-    let path = "/var/jb/Library/PreferenceBundles/simplels15prefs.bundle/\(fileName)"
-    let url = URL(fileURLWithPath: path)
-    guard let dataProvider = CGDataProvider(url: url as CFURL),
-          let customFont = CGFont(dataProvider) else { return }
-    var error: Unmanaged<CFError>?
-    CTFontManagerRegisterGraphicsFont(customFont, &error)
-}
-
+// Hook vào View chính để xử lý Ẩn và Trục Y
 class DateViewHook: ClassHook<UIView> {
     static let targetName = "SBFLockScreenDateView"
 
-    func setFrame(_ frame: CGRect) {
-        var newFrame = frame
-        if Prefs.enabled {
-            newFrame.origin.y += Prefs.yOffset
-        }
-        orig.setFrame(newFrame)
-    }
-
-    func setAlignmentPercent(_ percent: Double) {
-        guard Prefs.enabled else { orig.setAlignmentPercent(percent); return }
-        if Prefs.alignment == 0 { orig.setAlignmentPercent(0.0) }
-        else if Prefs.alignment == 1 { orig.setAlignmentPercent(0.5) }
-        else { orig.setAlignmentPercent(1.0) }
-    }
-    
-    func alignmentPercent() -> Double {
-        guard Prefs.enabled else { return orig.alignmentPercent() }
-        if Prefs.alignment == 0 { return 0.0 }
-        if Prefs.alignment == 1 { return 0.5 }
-        return 1.0
+    func layoutSubviews() {
+        orig.layoutSubviews()
+        guard Prefs.enabled else { return }
+        
+        // Di chuyển trục Y cho cả cụm
+        target.transform = CGAffineTransform(translationX: 0, y: Prefs.yOffset)
     }
 }
 
+// Hook vào các nhãn văn bản để xử lý Font, Size và Ẩn thành phần
 class LabelHook: ClassHook<UIView> {
     static let targetName = "SBUILegibilityLabel"
 
-    func setTextAlignment(_ alignment: NSTextAlignment) {
-        guard Prefs.enabled,
-              let font = target.value(forKey: "font") as? UIFont,
-              font.pointSize > 40.0 else {
-            orig.setTextAlignment(alignment)
-            return
-        }
-
-        if Prefs.alignment == 0 { orig.setTextAlignment(.left) }
-        else if Prefs.alignment == 1 { orig.setTextAlignment(.center) }
-        else { orig.setTextAlignment(.right) }
-    }
-
     func setFont(_ font: UIFont) {
-        guard Prefs.enabled, font.pointSize > 40.0 else { orig.setFont(font); return }
+        guard Prefs.enabled else { orig.setFont(font); return }
+        
+        var finalSize = font.pointSize
+        let isClock = font.pointSize > 50.0 // Đồng hồ thường rất to
+        let isDate = font.pointSize > 15.0 && font.pointSize <= 50.0 // Ngày tháng
 
-        let size = font.pointSize
+        if isClock { finalSize = Prefs.sizeClock }
+        else if isDate { finalSize = Prefs.sizeDate }
+
         var newFont: UIFont?
-
         if Prefs.fontName == "System" {
-            if Prefs.fontStyle == "Bold" { newFont = UIFont.systemFont(ofSize: size, weight: .bold) }
-            else { newFont = UIFont.systemFont(ofSize: size, weight: .medium) }
+            if Prefs.fontStyle == "Bold" { newFont = .systemFont(ofSize: finalSize, weight: .bold) }
+            else if Prefs.fontStyle == "Italic" { newFont = .italicSystemFont(ofSize: finalSize) }
+            else { newFont = .systemFont(ofSize: finalSize, weight: .medium) }
         } else {
-            newFont = UIFont(name: Prefs.fontName, size: size)
-            if newFont == nil { newFont = UIFont(name: "\(Prefs.fontName)-Regular", size: size) }
+            newFont = UIFont(name: Prefs.fontName, size: finalSize)
+            if newFont == nil { newFont = UIFont(name: "\(Prefs.fontName)-Regular", size: finalSize) }
         }
-        orig.setFont(newFont ?? UIFont.systemFont(ofSize: size, weight: .medium))
+        
+        orig.setFont(newFont ?? font)
     }
 
-    func setTextColor(_ color: UIColor) {
-        guard Prefs.enabled,
-              let font = target.value(forKey: "font") as? UIFont,
-              font.pointSize > 40.0,
-              Prefs.fontStyle == "Glass" else {
-            orig.setTextColor(color)
+    func setText(_ text: String?) {
+        guard Prefs.enabled, let text = text else { orig.setText(text); return }
+        
+        // Xử lý ẩn Lịch âm (thường chứa các từ như "Giáp", "Ất", "Bính" hoặc định dạng ngày âm)
+        if Prefs.hideLunar && (text.contains("tháng") && text.count > 15) {
+            target.isHidden = true
+            target.alpha = 0
             return
         }
+        
+        orig.setText(text)
+    }
+}
 
-        let glassColor = UIColor(white: 1.0, alpha: 0.75)
-        target.layer.shadowColor = UIColor.black.cgColor
-        target.layer.shadowOffset = CGSize(width: 0, height: 2)
-        target.layer.shadowRadius = 4.0
-        target.layer.shadowOpacity = 0.5
-        target.layer.masksToBounds = false
-
-        orig.setTextColor(glassColor)
+// Hook riêng cho Thời tiết (thường nằm trong Subtitle View)
+class SubtitleHook: ClassHook<UIView> {
+    static let targetName = "SBFLockScreenDateSubtitleView"
+    
+    func layoutSubviews() {
+        orig.layoutSubviews()
+        if Prefs.enabled && Prefs.hideWeather {
+            target.isHidden = true
+            target.alpha = 0
+        }
     }
 }
 
 struct SimpleLS15: Tweak {
     init() {
         Prefs.load()
-        registerCustomFont(fileName: "lobster.ttf")
+        // Đăng ký font Lobster
+        let fontPath = "/var/jb/Library/PreferenceBundles/simplels15prefs.bundle/lobster.ttf"
+        let url = URL(fileURLWithPath: fontPath)
+        if let dataProvider = CGDataProvider(url: url as CFURL), let font = CGFont(dataProvider) {
+            var error: Unmanaged<CFError>?
+            CTFontManagerRegisterGraphicsFont(font, &error)
+        }
 
         let name = CFNotificationName("com.tuan.simplels15/ReloadPrefs" as CFString)
-        CFNotificationCenterAddObserver(
-            CFNotificationCenterGetDarwinNotifyCenter(),
-            nil,
-            { _, _, _, _, _ in Prefs.load() },
-            name.rawValue,
-            nil,
-            .deliverImmediately
-        )
+        CFNotificationCenterAddObserver(CFNotificationCenterGetDarwinNotifyCenter(), nil, { _, _, _, _, _ in Prefs.load() }, name.rawValue, nil, .deliverImmediately)
     }
 }
