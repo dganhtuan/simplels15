@@ -9,6 +9,11 @@
 			<key>label</key> <string>⚡ ÁP DỤNG &amp; RESPRING</string>
 			<key>action</key> <string>respring</string>
 		</dict>
+
+		<dict>
+			<key>cell</key> <string>PSGroupCell</string>
+			<key>label</key> <string>VỊ TRÍ &amp; HIỂN THỊ</string>
+		</dict>
 		<dict>
 			<key>cell</key> <string>PSSwitchCell</string>
 			<key>defaults</key> <string>com.tuan.simplels15</string>
@@ -18,58 +23,56 @@
 			<key>PostNotification</key> <string>com.tuan.simplels15/ReloadPrefs</string>
 		</dict>
 		<dict>
-			<key>cell</key> <string>PSGroupCell</string>
-			<key>label</key> <string>Căn lề Đồng hồ</string>
-		</dict>
-		<dict>
-			<key>cell</key> <string>PSSegmentCell</string>
-			<key>defaults</key> <string>com.tuan.simplels15</string>
-			<key>key</key> <string>alignment</string>
-			<key>default</key> <integer>1</integer>
-			<key>validTitles</key>
-			<array> <string>Trái</string> <string>Giữa</string> <string>Phải</string> </array>
-			<key>validValues</key>
-			<array> <integer>0</integer> <integer>1</integer> <integer>2</integer> </array>
-			<key>PostNotification</key> <string>com.tuan.simplels15/ReloadPrefs</string>
-		</dict>
-		<dict>
-			<key>cell</key> <string>PSGroupCell</string>
-			<key>label</key> <string>Di chuyển Lên / Xuống (Trục Y)</string>
-		</dict>
-		<dict>
 			<key>cell</key> <string>PSSliderCell</string>
 			<key>defaults</key> <string>com.tuan.simplels15</string>
 			<key>key</key> <string>yOffset</string>
-			<key>min</key> <real>-50.0</real>
-			<key>max</key> <real>250.0</real>
+			<key>min</key> <real>-100.0</real>
+			<key>max</key> <real>300.0</real>
 			<key>default</key> <real>0.0</real>
 			<key>showValue</key> <true/>
 			<key>PostNotification</key> <string>com.tuan.simplels15/ReloadPrefs</string>
 		</dict>
+
 		<dict>
 			<key>cell</key> <string>PSGroupCell</string>
-			<key>label</key> <string>Tùy chỉnh Font chữ</string>
+			<key>label</key> <string>KÍCH THƯỚC FONT</string>
+		</dict>
+		<dict>
+			<key>cell</key> <string>PSSliderCell</string>
+			<key>defaults</key> <string>com.tuan.simplels15</string>
+			<key>key</key> <string>sizeClock</string>
+			<key>min</key> <real>30.0</real>
+			<key>max</key> <real>120.0</real>
+			<key>default</key> <real>80.0</real>
+			<key>showValue</key> <true/>
+			<key>PostNotification</key> <string>com.tuan.simplels15/ReloadPrefs</string>
+		</dict>
+		<dict>
+			<key>cell</key> <string>PSSliderCell</string>
+			<key>defaults</key> <string>com.tuan.simplels15</string>
+			<key>key</key> <string>sizeDate</string>
+			<key>min</key> <real>10.0</real>
+			<key>max</key> <real>40.0</real>
+			<key>default</key> <real>20.0</real>
+			<key>showValue</key> <true/>
+			<key>PostNotification</key> <string>com.tuan.simplels15/ReloadPrefs</string>
+		</dict>
+
+		<dict>
+			<key>cell</key> <string>PSGroupCell</string>
+			<key>label</key> <string>KIỂU CHỮ &amp; ĐỊNH DẠNG</string>
 		</dict>
 		<dict>
 			<key>cell</key> <string>PSLinkListCell</string>
 			<key>defaults</key> <string>com.tuan.simplels15</string>
 			<key>key</key> <string>fontName</string>
-			<key>label</key> <string>Tên Font:</string>
+			<key>label</key> <string>Chọn Font:</string>
 			<key>detail</key> <string>PSListItemsController</string>
 			<key>validTitles</key>
-			<array>
-				<string>Hệ thống</string>
-				<string>Lobster</string>
-				<string>Arial</string>
-			</array>
+			<array> <string>Hệ thống</string> <string>Lobster</string> <string>Arial</string> </array>
 			<key>validValues</key>
-			<array>
-				<string>System</string>
-				<string>Lobster</string> 
-				<string>ArialMT</string>
-			</array>
+			<array> <string>System</string> <string>Lobster</string> <string>ArialMT</string> </array>
 			<key>default</key> <string>System</string>
-			<key>PostNotification</key> <string>com.tuan.simplels15/ReloadPrefs</string>
 		</dict>
 		<dict>
 			<key>cell</key> <string>PSLinkListCell</string>
@@ -78,20 +81,31 @@
 			<key>label</key> <string>Định dạng:</string>
 			<key>detail</key> <string>PSListItemsController</string>
 			<key>validTitles</key>
-			<array>
-				<string>Bình thường (Normal)</string>
-				<string>Nét Đậm (Bold)</string>
-				<string>Thủy tinh 3D (Glass)</string>
-			</array>
+			<array> <string>Bình thường</string> <string>Đậm</string> <string>Nghiêng</string> <string>Glass</string> </array>
 			<key>validValues</key>
-			<array>
-				<string>Normal</string>
-				<string>Bold</string>
-				<string>Glass</string>
-			</array>
+			<array> <string>Normal</string> <string>Bold</string> <string>Italic</string> <string>Glass</string> </array>
 			<key>default</key> <string>Normal</string>
-			<key>PostNotification</key> <string>com.tuan.simplels15/ReloadPrefs</string>
 		</dict>
+
+		<dict>
+			<key>cell</key> <string>PSGroupCell</string>
+			<key>label</key> <string>ẨN THÀNH PHẦN</string>
+		</dict>
+		<dict>
+			<key>cell</key> <string>PSSwitchCell</string>
+			<key>defaults</key> <string>com.tuan.simplels15</string>
+			<key>key</key> <string>hideWeather</string>
+			<key>label</key> <string>Ẩn Thời tiết</string>
+			<key>default</key> <false/>
+		</dict>
+		<dict>
+			<key>cell</key> <string>PSSwitchCell</string>
+			<key>defaults</key> <string>com.tuan.simplels15</string>
+			<key>key</key> <string>hideLunar</string>
+			<key>label</key> <string>Ẩn Lịch âm</string>
+			<key>default</key> <false/>
+		</dict>
+
 		<dict>
 			<key>cell</key> <string>PSGroupCell</string>
 			<key>footerText</key> <string>Created by: Anh Tuan</string>
